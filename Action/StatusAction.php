@@ -4,45 +4,85 @@ namespace DachcomDigital\Payum\PostFinance\Flex\Action;
 
 use DachcomDigital\Payum\PostFinance\Flex\Api;
 use Payum\Core\Action\ActionInterface;
+use Payum\Core\ApiAwareInterface;
+use Payum\Core\ApiAwareTrait;
 use Payum\Core\Bridge\Spl\ArrayObject;
 use Payum\Core\Exception\RequestNotSupportedException;
+use Payum\Core\GatewayAwareInterface;
+use Payum\Core\GatewayAwareTrait;
 use Payum\Core\Request\GetStatusInterface;
+use PostFinanceCheckout\Sdk\Model\Transaction;
+use PostFinanceCheckout\Sdk\Model\TransactionState;
 
-class StatusAction implements ActionInterface
+class StatusAction implements ActionInterface, ApiAwareInterface, GatewayAwareInterface
 {
+    use GatewayAwareTrait;
+    use ApiAwareTrait {
+        setApi as _setApi;
+    }
+
+    public function __construct()
+    {
+        $this->apiClass = Api::class;
+    }
+
+    public function setApi($api)
+    {
+        $this->_setApi($api);
+    }
+
     /**
-     * {@inheritDoc}
-     *
      * @param GetStatusInterface $request
      */
     public function execute($request)
     {
         RequestNotSupportedException::assertSupports($this, $request);
 
-        $model = new ArrayObject($request->getModel());
+        $model = ArrayObject::ensureArrayObject($request->getModel());
 
-        if (null === $model[Api::KEY_STATUS]) {
+        if ($model['transaction_id'] === null) {
             $request->markNew();
+
             return;
         }
 
-        switch ($model[Api::KEY_STATUS]) {
-            case Api::STATUS_CAPTURED:
-                $request->markCaptured();
-                break;
-            case Api::STATUS_FAILED:
-                $request->markFailed();
-                break;
-            default:
-                $request->markUnknown();
-                break;
+        $transaction = $this->api->getEntity($model['transaction_id']);
+        if (!$transaction instanceof Transaction) {
+            $request->markUnknown();
+
+            return;
+        }
+
+        $state = $transaction->getState();
+
+        // @see https://checkout.postfinance.ch/doc/api/web-service#_transactionstate
+
+        if ($state === TransactionState::CREATE) {
+            $request->markNew();
+        } elseif ($state === TransactionState::PENDING) {
+            $request->markPending();
+        } elseif ($state === TransactionState::CONFIRMED) {
+            $request->markPending();
+        } elseif ($state === TransactionState::PROCESSING) {
+            $request->markPending();
+        } elseif ($state === TransactionState::FAILED) {
+            $request->markFailed();
+        } elseif ($state === TransactionState::AUTHORIZED) {
+            $request->markAuthorized();
+        } elseif ($state === TransactionState::VOIDED) {
+            $request->markCanceled();
+        } elseif ($state === TransactionState::COMPLETED) {
+            $request->markCaptured();
+        } elseif ($state === TransactionState::FULFILL) {
+            $request->markCaptured();
+        } elseif ($state === TransactionState::DECLINE) {
+            $request->markFailed();
+        } else {
+            $request->markUnknown();
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public function supports($request)
+    public function supports($request): bool
     {
         return
             $request instanceof GetStatusInterface &&

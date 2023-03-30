@@ -1,27 +1,33 @@
 {
-  "name": "dachcom-digital/payum-postfinance-flex",
-  "type": "library",
-  "description": "PostFinance Flex Ecommerce for Payum",
-  "keywords": [
-    "payment",
-    "postfinance",
-    "ecommerce"
-  ],
-  "license": "GPL-3.0-or-later",
-  "authors": [
-    {
-      "name": "DACHCOM.DIGITAL Robert Kaczmarczyk",
-      "email": "rkaczmarczyk@dachcom.ch",
-      "homepage": "http://www.dachcom.com",
-      "role": "Developer"
+    "name": "dachcom-digital/payum-postfinance-flex",
+    "type": "library",
+    "description": "PostFinance Flex Ecommerce for Payum",
+    "keywords": [
+        "payment",
+        "postfinance",
+        "ecommerce"
+    ],
+    "license": "GPL-3.0-or-later",
+    "authors": [
+        {
+            "name": "DACHCOM.DIGITAL Robert Kaczmarczyk",
+            "email": "rkaczmarczyk@dachcom.ch",
+            "homepage": "http://www.dachcom.com",
+            "role": "Developer"
+        },
+        {
+            "name": "DACHCOM.DIGITAL Stefan Hagspiel",
+            "email": "shagspiel@dachcom.ch",
+            "homepage": "http://www.dachcom.com",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "payum/core": "^1.6"
+    },
+    "autoload": {
+        "psr-4": {
+            "DachcomDigital\\Payum\\PostFinance\\Flex\\": ""
+        }
     }
-  ],
-  "require": {
-    "payum/core": "^1.6"
-  },
-  "autoload": {
-    "psr-4": {
-      "DachcomDigital\\Payum\\PostFinance\\Flex\\": ""
-    }
-  }
 }

@@ -3,134 +3,140 @@
 namespace DachcomDigital\Payum\PostFinance\Flex;
 
 use Payum\Core\Bridge\Spl\ArrayObject;
-use Payum\Core\Exception\InvalidArgumentException;
-use Payum\Core\Exception\LogicException;
-use Payum\Core\Model\Payment;
-use PostFinanceCheckout\Sdk\Model\AddressCreate;
-use PostFinanceCheckout\Sdk\Model\CompletionLineItemCreate;
-use PostFinanceCheckout\Sdk\Model\LineItem;
+use PostFinanceCheckout\Sdk\ApiClient;
 use PostFinanceCheckout\Sdk\Model\LineItemCreate;
 use PostFinanceCheckout\Sdk\Model\LineItemType;
 use PostFinanceCheckout\Sdk\Model\ModelInterface;
+use PostFinanceCheckout\Sdk\Model\Transaction;
 use PostFinanceCheckout\Sdk\Model\TransactionCreate;
 use PostFinanceCheckout\Sdk\Service\TransactionPaymentPageService;
 use PostFinanceCheckout\Sdk\Service\TransactionService;
 
 class Api
 {
-    const KEY_SPACE_ID = 'spaceId';
-    const KEY_STATUS = 'STATUS';
-    const KEY_SANDBOX ='sandbox';
-    const KEY_RETURN_URL = 'returnUrl';
-    const KEY_POSTFINANCE_SECRET = 'postFinanceSecret';
-    const KEY_POSTFINANCE_USER_ID = 'postFinanceUserId';
-    const STATUS_CAPTURED = 'captured';
-    const STATUS_FAILED = 'failed';
-    const META_DATA_KEY_PAYMENT_TOKEN = 'paymentToken';
-    public const TEST = 'test';
-    public const PRODUCTION = 'production';
+    private array $options;
 
-    const PAYMENT_PAGE_REQUIRED_FIELDS = [
-        self::KEY_SPACE_ID
-    ];
-
-    const TRANSACTION_CREATE_REQUIRED_FIELDS = [
-        self::KEY_SPACE_ID,
-    ];
-
-    private ArrayObject $options;
-    private TransactionPaymentPageService $paymentPageService;
-    private TransactionService $transactionService;
-
-    public function __construct(array $options, TransactionPaymentPageService $paymentPageService, TransactionService $transactionService)
+    public function __construct(array $options)
     {
-        $this->paymentPageService = $paymentPageService;
-        $this->options = ArrayObject::ensureArrayObject($options);
-        $this->transactionService = $transactionService;
+        $this->options = $options;
     }
 
     public function getPaymentPageUrl(int $transactionId): string
     {
-        $this->options->validateNotEmpty(static::PAYMENT_PAGE_REQUIRED_FIELDS);
-
-        if ($this->options->get(self::KEY_SANDBOX, true)) {
-            if ($this->options->get(self::KEY_RETURN_URL, false)) {
-                return $this->getSuccessUrl($this->options[self::KEY_RETURN_URL]);
-            }
-            throw new LogicException(sprintf('No return url in sandbox mode set. Call %s::%s first', self::class, 'prepareTransaction'));
-        }
-
-        return $this->paymentPageService->paymentPageUrl($this->options[self::KEY_SPACE_ID], $transactionId);
+        return $this->getTransactionPaymentPageService()->paymentPageUrl($this->getSpaceId(), $transactionId);
     }
 
-    /**
-     * @param LineItemCreate[] $lineItems
-     */
-    public function prepareTransaction(ArrayObject $details, string $returnUrl, string $tokenHash): int
+    public function prepareTransaction(ArrayObject $details, string $returnUrl, string $tokenHash): Transaction
     {
-        $this->options->validateNotEmpty(static::TRANSACTION_CREATE_REQUIRED_FIELDS);
-
-        if ($this->options->get(self::KEY_SANDBOX, true)) {
-            $this->options[self::KEY_RETURN_URL] = $returnUrl;
-
-            return 0;
+        $transactionExtender = [];
+        if ($details->offsetExists('transaction_extender')) {
+            $transactionExtender = $details['transaction_extender'];
         }
 
         $lineItem = new LineItemCreate();
         $lineItem->setQuantity(1);
-        $lineItem->setAmountIncludingTax($details['AMOUNT'] / 100);
-        $lineItem->setUniqueId($details['ORDERID']);
-        $lineItem->setName($details['ORDERID']);
+        $lineItem->setAmountIncludingTax(($transactionExtender['amount']) / 100);
+        $lineItem->setUniqueId($transactionExtender['id']);
+        $lineItem->setName($transactionExtender['id']);
         $lineItem->setType(LineItemType::PRODUCT);
-        $lineItem->setSku($details['ORDERID']);
+        $lineItem->setSku($transactionExtender['id']);
 
-        return $this->transactionService->create(
-            $this->options[self::KEY_SPACE_ID],
-            $this->createTransaction(
-                $lineItem,
-                'CHF', //$details['CURRENCY'],
-                $returnUrl,
-                $tokenHash)
-        )->getId();
-    }
-
-    /**
-     * @param LineItemCreate[] $lineItems
-     */
-    protected function createTransaction(LineItemCreate $completionLineItem, string $currency, string $returnUrl, string $tokenHash): TransactionCreate
-    {
         $transaction = new TransactionCreate();
-        $transaction->setCurrency($currency);
-        $transaction->setLineItems([$completionLineItem]);
+        $transaction->setCurrency($transactionExtender['currency']);
+        $transaction->setLanguage($transactionExtender['language'] ?? null);
+        $transaction->setLineItems([$lineItem]);
         $transaction->setAutoConfirmationEnabled(true);
         $transaction->setFailedUrl($this->getFailedUrl($returnUrl));
         $transaction->setSuccessUrl($this->getSuccessUrl($returnUrl));
-        $transaction->setMetaData(
-            [
-                static::META_DATA_KEY_PAYMENT_TOKEN  => $tokenHash
-            ]
-        );
+        $transaction->setMetaData(['paymentToken' => $tokenHash]);
 
-        return $transaction;
+        return $this->getTransactionService()->create($this->getSpaceId(), $transaction);
     }
 
     public function getEntity($entityId): ModelInterface
     {
-       return  $this->transactionService->read($this->options[self::KEY_SPACE_ID], $entityId);
-    }
-
-    protected function getUrlWithStatus(string $url, string $status): string
-    {
-        return sprintf('%s?%s=%s', $url, self::KEY_STATUS, $status);
+        return $this->getTransactionService()->read($this->getSpaceId(), $entityId);
     }
 
     protected function getSuccessUrl(string $url): string
     {
-        return $this->getUrlWithStatus($url, self::STATUS_CAPTURED);
+        return $this->getUrlWithStatus($url, 'success');
     }
 
     protected function getFailedUrl(string $url): string
     {
-        return $this->getUrlWithStatus($url, self::STATUS_FAILED);
+        return $this->getUrlWithStatus($url, 'failed');
+    }
+
+    public function createTransactionInfo(Transaction $transaction): array
+    {
+        $data = [];
+
+        $ref = new \ReflectionClass($transaction);
+
+        $invalidNames = [
+            'getters'
+        ];
+
+        foreach ($ref->getMethods() as $method) {
+
+            $methodName = $method->getName();
+
+            if (!$method->isPublic()) {
+                continue;
+            }
+
+            if (in_array($methodName, $invalidNames, true)) {
+                continue;
+            }
+
+            if (!str_starts_with($methodName, 'get')) {
+                continue;
+            }
+
+            $value = $transaction->$methodName();
+
+            if ($value === null) {
+                continue;
+            }
+
+            if (is_object($value)) {
+                continue;
+            }
+
+            $data[str_replace('get', '', $methodName)] = $value;
+        }
+
+        return $data;
+    }
+
+    protected function getTransactionPaymentPageService(): TransactionPaymentPageService
+    {
+        return new TransactionPaymentPageService($this->getClient());
+    }
+
+    protected function getTransactionService(): TransactionService
+    {
+        return new TransactionService($this->getClient());
+    }
+
+    protected function getClient(): ApiClient
+    {
+        return new ApiClient($this->options['postFinanceUserId'], $this->options['postFinanceSecret']);
+    }
+
+    protected function getUrlWithStatus(string $url, string $status): string
+    {
+        return sprintf('%s?%s=%s', $url, 'redirect_status', $status);
+    }
+
+    protected function isSandbox(): bool
+    {
+        return $this->options['sandbox'] ?? false;
+    }
+
+    protected function getSpaceId(): mixed
+    {
+        return $this->options['spaceId'];
     }
 }
