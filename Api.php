@@ -50,6 +50,10 @@ class Api
         $transaction->setSuccessUrl($this->getSuccessUrl($returnUrl));
         $transaction->setMetaData(['paymentToken' => $tokenHash]);
 
+        if (array_key_exists('allowedPaymentMethodBrands', $transactionExtender)) {
+            $transaction->setAllowedPaymentMethodBrands($transactionExtender['allowedPaymentMethodBrands']);
+        }
+
         return $this->getTransactionService()->create($this->getSpaceId(), $transaction);
     }
 
