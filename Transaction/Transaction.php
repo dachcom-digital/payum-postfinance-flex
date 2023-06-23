@@ -8,6 +8,7 @@ class Transaction
     protected int|float $amount;
     protected ?string $currency;
     protected ?string $language = null;
+    protected ?array $allowedPaymentMethodBrands = null;
 
     public function getId(): mixed
     {
@@ -49,14 +50,30 @@ class Transaction
         $this->language = $language;
     }
 
+    public function getAllowedPaymentMethodBrands(): ?array
+    {
+        return $this->allowedPaymentMethodBrands;
+    }
+
+    public function setAllowedPaymentMethodBrands(?array $allowedPaymentMethodBrands): void
+    {
+        $this->allowedPaymentMethodBrands = $allowedPaymentMethodBrands;
+    }
+
     public function toArray(): array
     {
-        return [
-            'id'       => $this->getId(),
-            'amount'   => $this->getAmount(),
-            'currency' => $this->getCurrency(),
-            'language' => $this->getLanguage(),
+        $data = [
+            'id'                         => $this->getId(),
+            'amount'                     => $this->getAmount(),
+            'currency'                   => $this->getCurrency(),
+            'language'                   => $this->getLanguage(),
+            'allowedPaymentMethodBrands' => $this->getAllowedPaymentMethodBrands(),
         ];
 
+        return array_filter($data, static function ($row) {
+            return $row !== null;
+        });
+
     }
+
 }
