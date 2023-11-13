@@ -11,11 +11,15 @@ use Payum\Core\Bridge\Spl\ArrayObject;
 use Payum\Core\Exception\RequestNotSupportedException;
 use Payum\Core\GatewayAwareInterface;
 use Payum\Core\GatewayAwareTrait;
+use Payum\Core\Security\GenericTokenFactoryAwareInterface;
+use Payum\Core\Security\GenericTokenFactoryAwareTrait;
 use PostFinanceCheckout\Sdk\Model\Transaction;
 
-class CreateTransactionAction implements ActionInterface, GatewayAwareInterface, ApiAwareInterface
+class CreateTransactionAction implements ActionInterface, GatewayAwareInterface, ApiAwareInterface, GenericTokenFactoryAwareInterface
 {
     use GatewayAwareTrait;
+    use GenericTokenFactoryAwareTrait;
+
     use ApiAwareTrait {
         setApi as _setApi;
     }
@@ -42,10 +46,13 @@ class CreateTransactionAction implements ActionInterface, GatewayAwareInterface,
         try {
 
             $returnUrl = $request->getToken()->getTargetUrl();
-            $tokenHash = $request->getToken()->getHash();
+            $notifyToken = $this->tokenFactory->createNotifyToken(
+                $request->getToken()->getGatewayName(),
+                $request->getToken()->getDetails()
+            );
 
             /** @var Transaction $transaction */
-            $transaction = $this->api->prepareTransaction($model, $returnUrl, $tokenHash);
+            $transaction = $this->api->prepareTransaction($model, $returnUrl, $notifyToken->getHash());
 
             $model->replace(['transaction_id' => $transaction->getId()]);
 
