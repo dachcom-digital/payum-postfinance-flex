@@ -26,7 +26,7 @@ class Api
         return $this->getTransactionPaymentPageService()->paymentPageUrl($this->getSpaceId(), $transactionId);
     }
 
-    public function prepareTransaction(ArrayObject $details, string $returnUrl, string $tokenHash): Transaction
+    public function prepareTransaction(ArrayObject $details, string $returnUrl, string $notifyTokenHash): Transaction
     {
         $transactionExtender = [];
         if ($details->offsetExists('transaction_extender')) {
@@ -48,7 +48,7 @@ class Api
         $transaction->setAutoConfirmationEnabled(true);
         $transaction->setFailedUrl($this->getFailedUrl($returnUrl));
         $transaction->setSuccessUrl($this->getSuccessUrl($returnUrl));
-        $transaction->setMetaData(['paymentToken' => $tokenHash]);
+        $transaction->setMetaData(['paymentToken' => $notifyTokenHash]);
 
         if (array_key_exists('allowedPaymentMethodBrands', $transactionExtender)) {
             $transaction->setAllowedPaymentMethodBrands($transactionExtender['allowedPaymentMethodBrands']);
