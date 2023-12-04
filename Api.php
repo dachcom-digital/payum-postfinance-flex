@@ -4,6 +4,7 @@ namespace DachcomDigital\Payum\PostFinance\Flex;
 
 use Payum\Core\Bridge\Spl\ArrayObject;
 use PostFinanceCheckout\Sdk\ApiClient;
+use PostFinanceCheckout\Sdk\Model\AddressCreate;
 use PostFinanceCheckout\Sdk\Model\LineItemCreate;
 use PostFinanceCheckout\Sdk\Model\LineItemType;
 use PostFinanceCheckout\Sdk\Model\ModelInterface;
@@ -33,26 +34,30 @@ class Api
             $transactionExtender = $details['transaction_extender'];
         }
 
-        $lineItem = new LineItemCreate();
-        $lineItem->setQuantity(1);
-        $lineItem->setAmountIncludingTax(($transactionExtender['amount']) / 100);
-        $lineItem->setUniqueId($transactionExtender['id']);
-        $lineItem->setName($transactionExtender['id']);
-        $lineItem->setType(LineItemType::PRODUCT);
-        $lineItem->setSku($transactionExtender['id']);
+        $shippingAddress = $this->createPostFinanceModel(AddressCreate::class, $transactionExtender['shippingAddress'] ?? []);
+        $billingAddress = $this->createPostFinanceModel(AddressCreate::class, $transactionExtender['billingAddress'] ?? []);
 
-        $transaction = new TransactionCreate();
-        $transaction->setCurrency($transactionExtender['currency']);
-        $transaction->setLanguage($transactionExtender['language'] ?? null);
-        $transaction->setLineItems([$lineItem]);
-        $transaction->setAutoConfirmationEnabled(true);
-        $transaction->setFailedUrl($this->getFailedUrl($returnUrl));
-        $transaction->setSuccessUrl($this->getSuccessUrl($returnUrl));
-        $transaction->setMetaData(['paymentToken' => $notifyTokenHash]);
+        $lineItem = $this->createPostFinanceModel(LineItemCreate::class, [
+            'quantity'           => 1,
+            'amountIncludingTax' => $transactionExtender['amount'] / 100,
+            'uniqueId'           => $transactionExtender['id'],
+            'name'               => $transactionExtender['id'],
+            'sku'                => $transactionExtender['id'],
+            'type'               => LineItemType::PRODUCT,
+        ]);
 
-        if (array_key_exists('allowedPaymentMethodBrands', $transactionExtender)) {
-            $transaction->setAllowedPaymentMethodBrands($transactionExtender['allowedPaymentMethodBrands']);
-        }
+        $transaction = $this->createPostFinanceModel(TransactionCreate::class, [
+            'currency'                      => $transactionExtender['currency'] ?? null,
+            'language'                      => $transactionExtender['language'] ?? null,
+            'lineItems'                     => [$lineItem],
+            'autoConfirmationEnabled'       => true,
+            'failedUrl'                     => $this->getFailedUrl($returnUrl),
+            'successUrl'                    => $this->getSuccessUrl($returnUrl),
+            'shippingAddress'               => $shippingAddress,
+            'billingAddress'                => $billingAddress,
+            'metaData'                      => ['paymentToken' => $notifyTokenHash],
+            'allowedPaymentMethodBrands' => $transactionExtender['allowedPaymentMethodBrands'] ?? [],
+        ]);
 
         return $this->getTransactionService()->create($this->getSpaceId(), $transaction);
     }
@@ -143,4 +148,16 @@ class Api
     {
         return $this->options['spaceId'];
     }
+
+    protected function createPostFinanceModel(string $model, array $data): ModelInterface
+    {
+        $modelClass = new $model();
+        foreach ($data as $key => $value) {
+            $setter = sprintf('set%s', ucfirst($key));
+            $modelClass->$setter($value);
+        }
+
+        return $modelClass;
+    }
+
 }

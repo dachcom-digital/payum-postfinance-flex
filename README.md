@@ -14,6 +14,8 @@ Use multiple spaces to determine test/production.
 You need to define a global webhook: `https://your-domain.com/payment/notify/unsafe/[YOUR_POSTFINANCE_FLEX_GATEWAY_NAME]`
 
 ## Changelog
+### 1.0.3
+- allow address data submission, use abstract model creation
 ### 1.0.2
 - use dedicated notify token for webhooks to prevent invalidation before completing payment state submission
 ### 1.0.1
