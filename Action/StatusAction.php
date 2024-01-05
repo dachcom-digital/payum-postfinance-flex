@@ -59,9 +59,9 @@ class StatusAction implements ActionInterface, ApiAwareInterface, GatewayAwareIn
 
         if ($state === TransactionState::CREATE) {
             $request->markNew();
-        } elseif ($state === TransactionState::PENDING) {
-            $request->markPending();
         } elseif ($state === TransactionState::CONFIRMED) {
+            $request->markNew();
+        } elseif ($state === TransactionState::PENDING) {
             $request->markPending();
         } elseif ($state === TransactionState::PROCESSING) {
             $request->markPending();
