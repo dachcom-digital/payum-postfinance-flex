@@ -2,6 +2,7 @@
 
 namespace DachcomDigital\Payum\PostFinance\Flex;
 
+use DachcomDigital\Payum\PostFinance\Flex\Action\Api\RenderIframeAction;
 use DachcomDigital\Payum\PostFinance\Flex\Action\Api\RenderLightboxAction;
 use DachcomDigital\Payum\PostFinance\Flex\Action\Api\TransactionExtenderAction;
 use DachcomDigital\Payum\PostFinance\Flex\Action\CaptureAction;
@@ -23,7 +24,7 @@ class PostFinanceFlexGatewayFactory extends GatewayFactory
             'payum.factory_name'  => 'postfinance_flex',
             'payum.factory_title' => 'PostFinance Checkout Flex',
 
-            'payum.template.lightbox' => '@PayumPostFinanceFlex/action',
+            'payum.template.path' => '@PayumPostFinanceFlex/action',
 
             'payum.action.capture'         => new CaptureAction(),
             'payum.action.status'          => new StatusAction(),
@@ -36,7 +37,10 @@ class PostFinanceFlexGatewayFactory extends GatewayFactory
             'payum.action.api.initialize_transaction' => new CreateTransactionAction(),
             'payum.action.api.capture_offsite'        => new CaptureOffsiteAction(),
             'payum.action.api.render_lightbox'        => function (ArrayObject $config) {
-                return new RenderLightboxAction($config['payum.template.lightbox']);
+                return new RenderLightboxAction($config['payum.template.path']);
+            },
+            'payum.action.api.render_iframe'        => function (ArrayObject $config) {
+                return new RenderIframeAction($config['payum.template.path']);
             },
         ]);
 
