@@ -5,6 +5,7 @@ namespace DachcomDigital\Payum\PostFinance\Flex\Action;
 use DachcomDigital\Payum\PostFinance\Flex\Api;
 use DachcomDigital\Payum\PostFinance\Flex\Request\Api\CaptureOffsite;
 use DachcomDigital\Payum\PostFinance\Flex\Request\Api\CreateTransaction;
+use DachcomDigital\Payum\PostFinance\Flex\Request\Api\RenderLightbox;
 use Payum\Core\Action\ActionInterface;
 use Payum\Core\ApiAwareInterface;
 use Payum\Core\ApiAwareTrait;
@@ -55,7 +56,12 @@ class CaptureAction implements ActionInterface, ApiAwareInterface, GatewayAwareI
         $transaction->setModel($model);
 
         $this->gateway->execute($transaction);
-        $this->gateway->execute(new CaptureOffsite($model));
+
+        if ($this->api->getIntegrationType() === 'paymentPage') {
+            $this->gateway->execute(new CaptureOffsite($model));
+        } elseif ($this->api->getIntegrationType() === 'lightbox') {
+            $this->gateway->execute(new RenderLightbox($model));
+        }
     }
 
     public function supports($request): bool

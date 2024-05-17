@@ -2,6 +2,7 @@
 
 namespace DachcomDigital\Payum\PostFinance\Flex;
 
+use DachcomDigital\Payum\PostFinance\Flex\Action\Api\RenderLightboxAction;
 use DachcomDigital\Payum\PostFinance\Flex\Action\Api\TransactionExtenderAction;
 use DachcomDigital\Payum\PostFinance\Flex\Action\CaptureAction;
 use DachcomDigital\Payum\PostFinance\Flex\Action\ConvertPaymentAction;
@@ -22,6 +23,8 @@ class PostFinanceFlexGatewayFactory extends GatewayFactory
             'payum.factory_name'  => 'postfinance_flex',
             'payum.factory_title' => 'PostFinance Checkout Flex',
 
+            'payum.template.lightbox' => '@PayumPostFinanceFlex/action',
+
             'payum.action.capture'         => new CaptureAction(),
             'payum.action.status'          => new StatusAction(),
             'payum.action.notify_null'     => new NotifyNullAction(),
@@ -32,10 +35,14 @@ class PostFinanceFlexGatewayFactory extends GatewayFactory
             'payum.action.api.transaction_extender'   => new TransactionExtenderAction(),
             'payum.action.api.initialize_transaction' => new CreateTransactionAction(),
             'payum.action.api.capture_offsite'        => new CaptureOffsiteAction(),
+            'payum.action.api.render_lightbox'        => function (ArrayObject $config) {
+                return new RenderLightboxAction($config['payum.template.lightbox']);
+            },
         ]);
 
         $config['payum.default_options'] = [
             'sandbox'           => false,
+            'integrationType'   => 'paymentPage',
             'spaceId'           => '',
             'postFinanceSecret' => '',
             'postFinanceUserId' => ''
@@ -43,9 +50,14 @@ class PostFinanceFlexGatewayFactory extends GatewayFactory
 
         $config['payum.required_options'] = [
             'spaceId',
+            'integrationType',
             'postFinanceSecret',
             'postFinanceUserId'
         ];
+
+        $config['payum.paths'] = array_replace([
+            'PayumPostFinanceFlex' => __DIR__.'/Resources/views',
+        ], $config['payum.paths'] ?: []);
 
         if (!empty($config['payum.api'])) {
             return;
