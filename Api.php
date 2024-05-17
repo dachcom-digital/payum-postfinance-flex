@@ -10,6 +10,8 @@ use PostFinanceCheckout\Sdk\Model\LineItemType;
 use PostFinanceCheckout\Sdk\Model\ModelInterface;
 use PostFinanceCheckout\Sdk\Model\Transaction;
 use PostFinanceCheckout\Sdk\Model\TransactionCreate;
+use PostFinanceCheckout\Sdk\Service\TransactionIframeService;
+use PostFinanceCheckout\Sdk\Service\TransactionLightboxService;
 use PostFinanceCheckout\Sdk\Service\TransactionPaymentPageService;
 use PostFinanceCheckout\Sdk\Service\TransactionService;
 
@@ -25,6 +27,20 @@ class Api
     public function getPaymentPageUrl(int $transactionId): string
     {
         return $this->getTransactionPaymentPageService()->paymentPageUrl($this->getSpaceId(), $transactionId);
+    }
+
+    public function getJavascriptUrl(int $transactionId): string
+    {
+        $transactionLightboxService = new TransactionLightboxService($this->getClient());
+
+        return $transactionLightboxService->javascriptUrl($this->options['spaceId'], $transactionId);
+    }
+
+    public function getIframeUrl(int $transactionId): string
+    {
+        $transactionIframeService = new TransactionIframeService($this->getClient());
+
+        return $transactionIframeService->javascriptUrl($this->options['spaceId'], $transactionId);
     }
 
     public function prepareTransaction(ArrayObject $details, string $returnUrl, string $notifyTokenHash): Transaction
@@ -47,15 +63,15 @@ class Api
         ]);
 
         $transaction = $this->createPostFinanceModel(TransactionCreate::class, [
-            'currency'                      => $transactionExtender['currency'] ?? null,
-            'language'                      => $transactionExtender['language'] ?? null,
-            'lineItems'                     => [$lineItem],
-            'autoConfirmationEnabled'       => true,
-            'failedUrl'                     => $this->getFailedUrl($returnUrl),
-            'successUrl'                    => $this->getSuccessUrl($returnUrl),
-            'shippingAddress'               => $shippingAddress,
-            'billingAddress'                => $billingAddress,
-            'metaData'                      => ['paymentToken' => $notifyTokenHash],
+            'currency'                   => $transactionExtender['currency'] ?? null,
+            'language'                   => $transactionExtender['language'] ?? null,
+            'lineItems'                  => [$lineItem],
+            'autoConfirmationEnabled'    => true,
+            'failedUrl'                  => $this->getFailedUrl($returnUrl),
+            'successUrl'                 => $this->getSuccessUrl($returnUrl),
+            'shippingAddress'            => $shippingAddress,
+            'billingAddress'             => $billingAddress,
+            'metaData'                   => ['paymentToken' => $notifyTokenHash],
             'allowedPaymentMethodBrands' => $transactionExtender['allowedPaymentMethodBrands'] ?? [],
         ]);
 
@@ -136,7 +152,9 @@ class Api
 
     protected function getUrlWithStatus(string $url, string $status): string
     {
-        return sprintf('%s?%s=%s', $url, 'redirect_status', $status);
+        $combiner = str_contains($url, '?') ? '&' : '?';
+
+        return sprintf('%s%s%s=%s', $url, $combiner, 'redirect_status', $status);
     }
 
     protected function isSandbox(): bool
@@ -147,6 +165,11 @@ class Api
     protected function getSpaceId(): mixed
     {
         return $this->options['spaceId'];
+    }
+
+    public function getIntegrationType(): string
+    {
+        return $this->options['integrationType'];
     }
 
     protected function createPostFinanceModel(string $model, array $data): ModelInterface

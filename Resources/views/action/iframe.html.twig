@@ -1,0 +1,41 @@
+{% block head_stylesheets %}
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js" type="text/javascript" charset="utf-8"></script>
+    <script src="{{ javascriptUrl }}" type="text/javascript" charset="utf-8"></script>
+{% endblock %}
+
+{% block content %}
+    <ul id="payment-errors"></ul>
+    <div id="payment-form"></div>
+{% endblock %}
+
+{% block scripts %}
+    <script type="text/javascript">
+
+        var paymentMethodConfigurationId = 1,
+            containerId = 'payment-form',
+            handler = window.IframeCheckoutHandler(paymentMethodConfigurationId);
+
+        handler.setValidationCallback(function (validationResult) {
+
+            $('#payment-errors').html('');
+
+            if (validationResult.success) {
+                handler.submit();
+            } else {
+                $.each(validationResult.errors, function (index, errorMessage) {
+                    $('#payment-errors').append('<li>' + errorMessage + '</li>');
+                });
+            }
+        });
+
+        //handler.setInitializeCallback(function () { });
+        //handler.setHeightChangeCallback(function (height) { });
+
+        handler.create(containerId);
+
+        $('document').ready(function () {
+            handler.validate();
+        });
+
+    </script>
+{% endblock %}

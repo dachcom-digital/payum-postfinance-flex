@@ -1,0 +1,18 @@
+{% block head_stylesheets %}
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js" type="text/javascript" charset="utf-8"></script>
+    <script src="{{ javascriptUrl }}" type="text/javascript" charset="utf-8"></script>
+{% endblock %}
+
+{% block content %}
+    <button id="pay-button">Pay now</button>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        $('#pay-button').on('click', function (e) {
+            window.LightboxCheckoutHandler.startPayment(paymentMethodConfigurationId, function () {
+                alert('An error occurred during the initialization of the payment lightbox.');
+            });
+        });
+    </script>
+{% endblock %}
