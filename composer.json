@@ -25,6 +25,11 @@
     "require": {
         "payum/core": "^1.6"
     },
+    "extra": {
+        "branch-alias": {
+            "dev-main": "1.1.x-dev"
+        }
+    },
     "autoload": {
         "psr-4": {
             "DachcomDigital\\Payum\\PostFinance\\Flex\\": ""
