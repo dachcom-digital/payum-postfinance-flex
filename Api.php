@@ -73,6 +73,7 @@ class Api
             'billingAddress'             => $billingAddress,
             'metaData'                   => ['paymentToken' => $notifyTokenHash],
             'allowedPaymentMethodBrands' => $transactionExtender['allowedPaymentMethodBrands'] ?? [],
+            'allowedPaymentMethodConfigurations' => $transactionExtender['allowedPaymentMethodConfigurations'] ?? [],
         ]);
 
         return $this->getTransactionService()->create($this->getSpaceId(), $transaction);
