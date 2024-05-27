@@ -12,6 +12,7 @@ class Transaction
     protected ?string $currency;
     protected ?string $language = null;
     protected ?array $allowedPaymentMethodBrands = null;
+    protected ?array $allowedPaymentMethodConfigurations = null;
 
     protected ?AddressCreate $shippingAddress = null;
     protected ?AddressCreate $billingAddress = null;
@@ -66,6 +67,16 @@ class Transaction
         $this->allowedPaymentMethodBrands = $allowedPaymentMethodBrands;
     }
 
+    public function getAllowedPaymentMethodConfigurations(): ?array
+    {
+        return $this->allowedPaymentMethodConfigurations;
+    }
+
+    public function setAllowedPaymentMethodConfigurations(?array $allowedPaymentMethodConfigurations): void
+    {
+        $this->allowedPaymentMethodConfigurations = $allowedPaymentMethodConfigurations;
+    }
+
     public function getShippingAddress(): ?AddressCreate
     {
         return $this->shippingAddress;
@@ -89,13 +100,14 @@ class Transaction
     public function toArray(): array
     {
         $data = [
-            'id'                         => $this->getId(),
-            'amount'                     => $this->getAmount(),
-            'currency'                   => $this->getCurrency(),
-            'language'                   => $this->getLanguage(),
-            'allowedPaymentMethodBrands' => $this->getAllowedPaymentMethodBrands(),
-            'shippingAddress'            => $this->shippingAddress === null ? [] : (array) ObjectSerializer::sanitizeForSerialization($this->shippingAddress),
-            'billingAddress'             => $this->billingAddress === null ? [] : (array) ObjectSerializer::sanitizeForSerialization($this->billingAddress)
+            'id'                                 => $this->getId(),
+            'amount'                             => $this->getAmount(),
+            'currency'                           => $this->getCurrency(),
+            'language'                           => $this->getLanguage(),
+            'allowedPaymentMethodBrands'         => $this->getAllowedPaymentMethodBrands(),
+            'allowedPaymentMethodConfigurations' => $this->getAllowedPaymentMethodConfigurations(),
+            'shippingAddress'                    => $this->shippingAddress === null ? [] : (array) ObjectSerializer::sanitizeForSerialization($this->shippingAddress),
+            'billingAddress'                     => $this->billingAddress === null ? [] : (array) ObjectSerializer::sanitizeForSerialization($this->billingAddress)
         ];
 
         return array_filter($data, static function ($row) {
