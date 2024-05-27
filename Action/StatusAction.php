@@ -72,7 +72,7 @@ class StatusAction implements ActionInterface, ApiAwareInterface, GatewayAwareIn
         } elseif ($state === TransactionState::VOIDED) {
             $request->markCanceled();
         } elseif ($state === TransactionState::COMPLETED) {
-            $request->markCaptured();
+            $request->markAuthorized();
         } elseif ($state === TransactionState::FULFILL) {
             $request->markCaptured();
         } elseif ($state === TransactionState::DECLINE) {
