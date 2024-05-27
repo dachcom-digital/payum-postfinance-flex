@@ -14,6 +14,8 @@ Use multiple spaces to determine test/production.
 You need to define a global webhook: `https://your-domain.com/payment/notify/unsafe/[YOUR_POSTFINANCE_FLEX_GATEWAY_NAME]`
 
 ## Changelog
+### 1.1.1
+- change payment state to `authorized` if transaction state is `completed`
 ### 1.1.0
 - add integration types
 - Add `allowedPaymentMethodConfigurations` option
