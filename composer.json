@@ -23,7 +23,8 @@
         }
     ],
     "require": {
-        "payum/core": "^1.6"
+        "payum/core": "^1.6",
+        "postfinancecheckout/sdk": "^4.1"
     },
     "extra": {
         "branch-alias": {

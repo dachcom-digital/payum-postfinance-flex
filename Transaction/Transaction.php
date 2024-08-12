@@ -11,6 +11,7 @@ class Transaction
     protected int|float $amount;
     protected ?string $currency;
     protected ?string $language = null;
+    protected ?array $totalTaxes = null;
     protected ?array $allowedPaymentMethodBrands = null;
     protected ?array $allowedPaymentMethodConfigurations = null;
 
@@ -55,6 +56,16 @@ class Transaction
     public function setLanguage(?string $language): void
     {
         $this->language = $language;
+    }
+
+    public function getTotalTaxes(): ?array
+    {
+        return $this->totalTaxes;
+    }
+
+    public function setTotalTaxes(?array $totalTaxes): void
+    {
+        $this->totalTaxes = $totalTaxes;
     }
 
     public function getAllowedPaymentMethodBrands(): ?array
@@ -104,6 +115,7 @@ class Transaction
             'amount'                             => $this->getAmount(),
             'currency'                           => $this->getCurrency(),
             'language'                           => $this->getLanguage(),
+            'totalTaxes'                         => $this->getTotalTaxes(),
             'allowedPaymentMethodBrands'         => $this->getAllowedPaymentMethodBrands(),
             'allowedPaymentMethodConfigurations' => $this->getAllowedPaymentMethodConfigurations(),
             'shippingAddress'                    => $this->shippingAddress === null ? [] : (array) ObjectSerializer::sanitizeForSerialization($this->shippingAddress),
@@ -113,7 +125,5 @@ class Transaction
         return array_filter($data, static function ($row) {
             return $row !== null;
         });
-
     }
-
 }
