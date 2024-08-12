@@ -56,6 +56,7 @@ class Api
         $lineItem = $this->createPostFinanceModel(LineItemCreate::class, [
             'quantity'           => 1,
             'amountIncludingTax' => $transactionExtender['amount'] / 100,
+            'taxes'              => $transactionExtender['totalTaxes'] ?? null,
             'uniqueId'           => $transactionExtender['id'],
             'name'               => $transactionExtender['id'],
             'sku'                => $transactionExtender['id'],

@@ -5,6 +5,12 @@ Payum Gateway For [PostFinance Checkout](https://checkout.postfinance.ch)
 - PHP 8.0+
 - [Payum](https://github.com/Payum/Payum)
 
+## Information
+This extension currently **does not** support multiple line items. 
+It only creates one line item which contains all the total information of the given order.
+
+***
+
 ## BackOffice
 
 ### Environments
@@ -13,7 +19,13 @@ Use multiple spaces to determine test/production.
 ### Webhook
 You need to define a global webhook: `https://your-domain.com/payment/notify/unsafe/[YOUR_POSTFINANCE_FLEX_GATEWAY_NAME]`
 
+***
+
 ## Changelog
+
+### 1.2.0
+- dependency `postfinancecheckout/sdk:^4.1` added
+- added `totalTaxes` to transaction extender to allow tax rates submission to line item
 ### 1.1.1
 - change payment state to `authorized` if transaction state is `completed`
 ### 1.1.0
