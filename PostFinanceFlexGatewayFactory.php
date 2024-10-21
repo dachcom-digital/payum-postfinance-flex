@@ -2,6 +2,7 @@
 
 namespace DachcomDigital\Payum\PostFinance\Flex;
 
+use DachcomDigital\Payum\PostFinance\Flex\Action\Api\GetTransactionDetailsAction;
 use DachcomDigital\Payum\PostFinance\Flex\Action\Api\RenderIframeAction;
 use DachcomDigital\Payum\PostFinance\Flex\Action\Api\RenderLightboxAction;
 use DachcomDigital\Payum\PostFinance\Flex\Action\Api\TransactionExtenderAction;
@@ -33,6 +34,7 @@ class PostFinanceFlexGatewayFactory extends GatewayFactory
             'payum.action.convert_payment' => new ConvertPaymentAction(),
             'payum.action.sync'            => new SyncAction(),
 
+            'payum.action.api.get_transaction_details' => new GetTransactionDetailsAction(),
             'payum.action.api.transaction_extender'   => new TransactionExtenderAction(),
             'payum.action.api.initialize_transaction' => new CreateTransactionAction(),
             'payum.action.api.capture_offsite'        => new CaptureOffsiteAction(),

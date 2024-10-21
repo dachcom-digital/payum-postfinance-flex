@@ -3,6 +3,7 @@
 namespace DachcomDigital\Payum\PostFinance\Flex\Action;
 
 use DachcomDigital\Payum\PostFinance\Flex\Api;
+use DachcomDigital\Payum\PostFinance\Flex\Request\Api\GetTransactionDetails;
 use Payum\Core\Action\ActionInterface;
 use Payum\Core\ApiAwareInterface;
 use Payum\Core\ApiAwareTrait;
@@ -11,7 +12,6 @@ use Payum\Core\Exception\RequestNotSupportedException;
 use Payum\Core\GatewayAwareInterface;
 use Payum\Core\GatewayAwareTrait;
 use Payum\Core\Request\GetStatusInterface;
-use PostFinanceCheckout\Sdk\Model\Transaction;
 use PostFinanceCheckout\Sdk\Model\TransactionState;
 
 class StatusAction implements ActionInterface, ApiAwareInterface, GatewayAwareInterface
@@ -46,14 +46,9 @@ class StatusAction implements ActionInterface, ApiAwareInterface, GatewayAwareIn
             return;
         }
 
-        $transaction = $this->api->getEntity($model['transaction_id']);
-        if (!$transaction instanceof Transaction) {
-            $request->markUnknown();
+        $this->gateway->execute(new GetTransactionDetails($model));
 
-            return;
-        }
-
-        $state = $transaction->getState();
+        $state = $model['State'] ?? null;
 
         // @see https://checkout.postfinance.ch/doc/api/web-service#_transactionstate
 
