@@ -105,6 +105,10 @@ class Api
             'getters'
         ];
 
+        $metaData = $transaction->getMetaData();
+
+        $data['meta_paymentToken'] = $metaData['paymentToken'] ?? null;
+
         foreach ($ref->getMethods() as $method) {
 
             $methodName = $method->getName();

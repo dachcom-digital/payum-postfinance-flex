@@ -3,9 +3,11 @@
 namespace DachcomDigital\Payum\PostFinance\Flex\Action;
 
 use DachcomDigital\Payum\PostFinance\Flex\Api;
+use DachcomDigital\Payum\PostFinance\Flex\Request\Api\GetTransactionDetails;
 use Payum\Core\Action\ActionInterface;
 use Payum\Core\ApiAwareInterface;
 use Payum\Core\ApiAwareTrait;
+use Payum\Core\Bridge\Spl\ArrayObject;
 use Payum\Core\Exception\RequestNotSupportedException;
 use Payum\Core\GatewayAwareInterface;
 use Payum\Core\GatewayAwareTrait;
@@ -13,7 +15,6 @@ use Payum\Core\Reply\HttpResponse;
 use Payum\Core\Request\GetHttpRequest;
 use Payum\Core\Request\GetToken;
 use Payum\Core\Request\Notify;
-use PostFinanceCheckout\Sdk\Model\Transaction;
 
 class NotifyNullAction implements ActionInterface, ApiAwareInterface, GatewayAwareInterface
 {
@@ -53,13 +54,12 @@ class NotifyNullAction implements ActionInterface, ApiAwareInterface, GatewayAwa
                 return;
             }
 
-            $transaction = $this->api->getEntity($body['entityId']);
+            $model = new ArrayObject([]);
+            $model['transaction_id'] = $body['entityId'];
 
-            if (!$transaction instanceof Transaction) {
-                return;
-            }
+            $this->gateway->execute(new GetTransactionDetails($model));
 
-            $tokenHash = $transaction->getMetaData()['paymentToken'] ?? null;
+            $tokenHash = $model['meta_paymentToken'] ?? null;
 
         } catch (\Throwable $e) {
             throw new HttpResponse($e->getMessage(), 500, ['Content-Type' => 'text/plain', 'X-Notify-Message' => $e->getMessage()]);
