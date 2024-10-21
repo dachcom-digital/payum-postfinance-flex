@@ -39,7 +39,7 @@ class GetTransactionDetailsAction implements ActionInterface, GatewayAwareInterf
         $model = ArrayObject::ensureArrayObject($request->getModel());
 
         if ($model['transaction_id'] === null) {
-            throw new LogicException('entityId must be set.');
+            throw new LogicException('transaction_id must be set.');
         }
 
         $transaction = $this->api->getEntity($model['transaction_id']);
