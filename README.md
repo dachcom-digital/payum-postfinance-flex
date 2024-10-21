@@ -23,6 +23,9 @@ You need to define a global webhook: `https://your-domain.com/payment/notify/uns
 
 ## Changelog
 
+### 1.3.0
+- introduce `GetTransactionDetailsAction`
+
 ### 1.2.0
 - dependency `postfinancecheckout/sdk:^4.1` added
 - added `totalTaxes` to transaction extender to allow tax rates submission to line item
