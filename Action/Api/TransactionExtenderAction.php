@@ -7,6 +7,7 @@ use DachcomDigital\Payum\PostFinance\Flex\Transaction\Transaction;
 use Payum\Core\Action\ActionInterface;
 use Payum\Core\Exception\RequestNotSupportedException;
 use Payum\Core\Model\PaymentInterface;
+use PostFinanceCheckout\Sdk\Model\TransactionCreate;
 
 class TransactionExtenderAction implements ActionInterface
 {
@@ -20,7 +21,7 @@ class TransactionExtenderAction implements ActionInterface
         /** @var PaymentInterface $payment */
         $payment = $request->getFirstModel();
 
-        $transaction = new Transaction();
+        $transaction = new Transaction(new TransactionCreate());
 
         $transaction->setId($payment->getNumber());
         $transaction->setCurrency($payment->getCurrencyCode());

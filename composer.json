@@ -12,13 +12,13 @@
         {
             "name": "DACHCOM.DIGITAL Robert Kaczmarczyk",
             "email": "rkaczmarczyk@dachcom.ch",
-            "homepage": "http://www.dachcom.com",
+            "homepage": "https://www.dachcom.com",
             "role": "Developer"
         },
         {
             "name": "DACHCOM.DIGITAL Stefan Hagspiel",
             "email": "shagspiel@dachcom.ch",
-            "homepage": "http://www.dachcom.com",
+            "homepage": "https://www.dachcom.com",
             "role": "Developer"
         }
     ],
@@ -28,7 +28,7 @@
     },
     "extra": {
         "branch-alias": {
-            "dev-main": "1.1.x-dev"
+            "dev-main": "3.0.x-dev"
         }
     },
     "autoload": {
