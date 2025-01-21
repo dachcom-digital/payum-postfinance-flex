@@ -4,12 +4,12 @@ namespace DachcomDigital\Payum\PostFinance\Flex;
 
 use Payum\Core\Bridge\Spl\ArrayObject;
 use PostFinanceCheckout\Sdk\ApiClient;
-use PostFinanceCheckout\Sdk\Model\AddressCreate;
 use PostFinanceCheckout\Sdk\Model\LineItemCreate;
 use PostFinanceCheckout\Sdk\Model\LineItemType;
 use PostFinanceCheckout\Sdk\Model\ModelInterface;
 use PostFinanceCheckout\Sdk\Model\Transaction;
 use PostFinanceCheckout\Sdk\Model\TransactionCreate;
+use PostFinanceCheckout\Sdk\ObjectSerializer;
 use PostFinanceCheckout\Sdk\Service\TransactionIframeService;
 use PostFinanceCheckout\Sdk\Service\TransactionLightboxService;
 use PostFinanceCheckout\Sdk\Service\TransactionPaymentPageService;
@@ -22,6 +22,11 @@ class Api
     public function __construct(array $options)
     {
         $this->options = $options;
+    }
+
+    public function getIntegrationType(): string
+    {
+        return $this->options['integrationType'];
     }
 
     public function getPaymentPageUrl(int $transactionId): string
@@ -45,39 +50,27 @@ class Api
 
     public function prepareTransaction(ArrayObject $details, string $returnUrl, string $notifyTokenHash): Transaction
     {
-        $transactionExtender = [];
+        $transactionConfig = [];
+        $detailsArray = $details->toUnsafeArray();
+
         if ($details->offsetExists('transaction_extender')) {
-            $transactionExtender = $details['transaction_extender'];
+            $transactionConfig = $detailsArray['transaction_extender'];
         }
 
-        $shippingAddress = $this->createPostFinanceModel(AddressCreate::class, $transactionExtender['shippingAddress'] ?? []);
-        $billingAddress = $this->createPostFinanceModel(AddressCreate::class, $transactionExtender['billingAddress'] ?? []);
+        if (array_key_exists('transactionCreate', $transactionConfig)) {
+            $transactionCreateObject = ObjectSerializer::deserialize($transactionConfig['transactionCreate'], TransactionCreate::class);
+        } else {
+            $transactionCreateObject = new TransactionCreate();
+        }
 
-        $lineItem = $this->createPostFinanceModel(LineItemCreate::class, [
-            'quantity'           => 1,
-            'amountIncludingTax' => $transactionExtender['amount'] / 100,
-            'taxes'              => $transactionExtender['totalTaxes'] ?? null,
-            'uniqueId'           => $transactionExtender['id'],
-            'name'               => $transactionExtender['id'],
-            'sku'                => $transactionExtender['id'],
-            'type'               => LineItemType::PRODUCT,
-        ]);
+        $this->setDefaultsToTransactionCreateObject(
+            $transactionCreateObject,
+            $transactionConfig,
+            $returnUrl,
+            $notifyTokenHash
+        );
 
-        $transaction = $this->createPostFinanceModel(TransactionCreate::class, [
-            'currency'                   => $transactionExtender['currency'] ?? null,
-            'language'                   => $transactionExtender['language'] ?? null,
-            'lineItems'                  => [$lineItem],
-            'autoConfirmationEnabled'    => true,
-            'failedUrl'                  => $this->getFailedUrl($returnUrl),
-            'successUrl'                 => $this->getSuccessUrl($returnUrl),
-            'shippingAddress'            => $shippingAddress,
-            'billingAddress'             => $billingAddress,
-            'metaData'                   => ['paymentToken' => $notifyTokenHash],
-            'allowedPaymentMethodBrands' => $transactionExtender['allowedPaymentMethodBrands'] ?? [],
-            'allowedPaymentMethodConfigurations' => $transactionExtender['allowedPaymentMethodConfigurations'] ?? [],
-        ]);
-
-        return $this->getTransactionService()->create($this->getSpaceId(), $transaction);
+        return $this->getTransactionService()->create($this->getSpaceId(), $transactionCreateObject);
     }
 
     public function getEntity($entityId): ModelInterface
@@ -173,20 +166,67 @@ class Api
         return $this->options['spaceId'];
     }
 
-    public function getIntegrationType(): string
-    {
-        return $this->options['integrationType'];
-    }
+    private function setDefaultsToTransactionCreateObject(
+        TransactionCreate $transactionCreateObject,
+        array $transactionConfig,
+        string $returnUrl,
+        string $notifyTokenHash
+    ): void {
 
-    protected function createPostFinanceModel(string $model, array $data): ModelInterface
-    {
-        $modelClass = new $model();
-        foreach ($data as $key => $value) {
-            $setter = sprintf('set%s', ucfirst($key));
-            $modelClass->$setter($value);
+        $defaults = [
+            'autoConfirmationEnabled' => true,
+            'currency'                => $transactionConfig['currency'] ?? null,
+            'language'                => $transactionConfig['language'] ?? null,
+            'failedUrl'               => $this->getFailedUrl($returnUrl),
+            'successUrl'              => $this->getSuccessUrl($returnUrl),
+            'metaData'                => function (mixed $storedValue) use ($notifyTokenHash) {
+
+                $data = ['paymentToken' => $notifyTokenHash];
+
+                if (!is_array($storedValue)) {
+                    return $data;
+                }
+
+                return array_merge($storedValue, $data);
+            }
+        ];
+
+        foreach ($defaults as $defaultKey => $defaultValue) {
+
+            $getter = sprintf('get%s', ucfirst($defaultKey));
+            $setter = sprintf('set%s', ucfirst($defaultKey));
+
+            if (is_callable($defaultValue)) {
+                $transactionCreateObject->$setter($defaultValue($transactionCreateObject->$getter()));
+            } elseif ($transactionCreateObject->$getter() === null) {
+                $transactionCreateObject->$setter($defaultValue);
+            }
         }
 
-        return $modelClass;
+        if (empty($transactionCreateObject->getLineItems())) {
+
+            /** @var LineItemCreate $defaultLineItem */
+            $defaultLineItem = $this->createDefaultLineItem($transactionConfig);
+
+            $transactionCreateObject->setLineItems([
+                $defaultLineItem
+            ]);
+        }
     }
 
+    private function createDefaultLineItem(array $data): ModelInterface
+    {
+        $lineItem = new LineItemCreate();
+
+        $lineItem
+            ->setQuantity(1)
+            ->setAmountIncludingTax($data['amount'] / 100)
+            ->setTaxes($data['totalTaxes'] ?? null)
+            ->setUniqueId($data['id'])
+            ->setName($data['id'])
+            ->setSku($data['id'])
+            ->setType(LineItemType::PRODUCT);
+
+        return $lineItem;
+    }
 }

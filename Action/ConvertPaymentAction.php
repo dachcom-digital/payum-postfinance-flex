@@ -49,7 +49,6 @@ class ConvertPaymentAction implements ActionInterface, ApiAwareInterface, Gatewa
         $details['transaction_extender'] = $transactionExtender->toArray();
 
         $request->setResult((array)$details);
-
     }
 
     public function supports($request): bool
