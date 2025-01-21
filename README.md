@@ -24,7 +24,7 @@ You need to define a global webhook: `https://your-domain.com/payment/notify/uns
 ## Changelog
 
 ### 2.0.0
-- [NEW FEATURE | **BC BREAK**] `TransactionCreate` Object added: The object `DachcomDigital\Payum\PostFinance\Flex\Transaction\Transaction'` 
+- [NEW FEATURE | **BC BREAK**] `TransactionCreate` Object added: The object `DachcomDigital\Payum\PostFinance\Flex\Transaction\Transaction` 
 now provides a `getTransactionCreateObject` method, which gives you full control over the transaction data. 
 Therefor we've removed several methods within the `Transaction` object itself.
 Use to the `TransactionCreate` object directly, to add additional data.
